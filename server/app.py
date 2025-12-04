@@ -11,7 +11,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json.compact = False
 
 migrate = Migrate(app, db)
-
 db.init_app(app)
 
 @app.route('/')
@@ -20,19 +19,39 @@ def index():
 
 @app.route('/bakeries')
 def bakeries():
-    return ''
+    bakeries = Bakery.query.all()
+    bakery_dicts = [bakery.to_dict() for bakery in bakeries]  
+    return make_response(jsonify(bakery_dicts), 200)
+
 
 @app.route('/bakeries/<int:id>')
 def bakery_by_id(id):
-    return ''
+    bakery = db.session.get(Bakery, id)  
+    
+    if not bakery:
+        abort(404)
+    
+    bakery_dict = bakery.to_dict(rules=('baked_goods',))
+    return make_response(jsonify(bakery_dict), 200)
 
 @app.route('/baked_goods/by_price')
 def baked_goods_by_price():
-    return ''
+    baked_goods = BakedGood.query.order_by(BakedGood.price.desc()).all()
+
+    bg_list = [bg.to_dict() for bg in baked_goods]
+   
+    return make_response(jsonify(bg_list), 200)
+
 
 @app.route('/baked_goods/most_expensive')
 def most_expensive_baked_good():
-    return ''
+    most_expensive = BakedGood.query.order_by(BakedGood.price.desc()).limit(1).first()
+
+    if not most_expensive:
+        return make_response(jsonify({'message': 'No baked goods found'}), 404)
+
+    return make_response(jsonify(most_expensive.to_dict()), 200)
+
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
